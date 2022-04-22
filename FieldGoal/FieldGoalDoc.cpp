@@ -1,15 +1,12 @@
-
-// FieldGoalDoc.cpp : implementation of the CFieldGoalDoc class
-//
-
+/////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2022 by W. T. Block, All Rights Reserved
+/////////////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
-// SHARED_HANDLERS can be defined in an ATL project implementing preview, thumbnail
-// and search filter handlers and allows sharing of document code with that project.
-#ifndef SHARED_HANDLERS
 #include "FieldGoal.h"
-#endif
 
 #include "FieldGoalDoc.h"
+#include "resource.h"
+#include "SettingsDialog.h"
 
 #include <propkey.h>
 
@@ -17,26 +14,29 @@
 #define new DEBUG_NEW
 #endif
 
-// CFieldGoalDoc
-
+/////////////////////////////////////////////////////////////////////////////
 IMPLEMENT_DYNCREATE(CFieldGoalDoc, CDocument)
 
+/////////////////////////////////////////////////////////////////////////////
 BEGIN_MESSAGE_MAP(CFieldGoalDoc, CDocument)
+	ON_COMMAND( ID_EDIT_SETTINGS, &CFieldGoalDoc::OnEditSettings )
 END_MESSAGE_MAP()
 
-
+/////////////////////////////////////////////////////////////////////////////
 // CFieldGoalDoc construction/destruction
-
 CFieldGoalDoc::CFieldGoalDoc()
 {
-	// TODO: add one-time construction code here
-
+	AngleInDegrees = 70;
+	Velocity = 20;
+	MetersToGoal = 80;
 }
 
+/////////////////////////////////////////////////////////////////////////////
 CFieldGoalDoc::~CFieldGoalDoc()
 {
 }
 
+/////////////////////////////////////////////////////////////////////////////
 BOOL CFieldGoalDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
@@ -48,11 +48,8 @@ BOOL CFieldGoalDoc::OnNewDocument()
 	return TRUE;
 }
 
-
-
-
+/////////////////////////////////////////////////////////////////////////////
 // CFieldGoalDoc serialization
-
 void CFieldGoalDoc::Serialize(CArchive& ar)
 {
 	if (ar.IsStoring())
@@ -63,64 +60,10 @@ void CFieldGoalDoc::Serialize(CArchive& ar)
 	{
 		// TODO: add loading code here
 	}
-}
+} // Serialize
 
-#ifdef SHARED_HANDLERS
-
-// Support for thumbnails
-void CFieldGoalDoc::OnDrawThumbnail(CDC& dc, LPRECT lprcBounds)
-{
-	// Modify this code to draw the document's data
-	dc.FillSolidRect(lprcBounds, RGB(255, 255, 255));
-
-	CString strText = _T("TODO: implement thumbnail drawing here");
-	LOGFONT lf;
-
-	CFont* pDefaultGUIFont = CFont::FromHandle((HFONT) GetStockObject(DEFAULT_GUI_FONT));
-	pDefaultGUIFont->GetLogFont(&lf);
-	lf.lfHeight = 36;
-
-	CFont fontDraw;
-	fontDraw.CreateFontIndirect(&lf);
-
-	CFont* pOldFont = dc.SelectObject(&fontDraw);
-	dc.DrawText(strText, lprcBounds, DT_CENTER | DT_WORDBREAK);
-	dc.SelectObject(pOldFont);
-}
-
-// Support for Search Handlers
-void CFieldGoalDoc::InitializeSearchContent()
-{
-	CString strSearchContent;
-	// Set search contents from document's data. 
-	// The content parts should be separated by ";"
-
-	// For example:  strSearchContent = _T("point;rectangle;circle;ole object;");
-	SetSearchContent(strSearchContent);
-}
-
-void CFieldGoalDoc::SetSearchContent(const CString& value)
-{
-	if (value.IsEmpty())
-	{
-		RemoveChunk(PKEY_Search_Contents.fmtid, PKEY_Search_Contents.pid);
-	}
-	else
-	{
-		CMFCFilterChunkValueImpl *pChunk = NULL;
-		ATLTRY(pChunk = new CMFCFilterChunkValueImpl);
-		if (pChunk != NULL)
-		{
-			pChunk->SetTextValue(PKEY_Search_Contents, value, CHUNK_TEXT);
-			SetChunkValue(pChunk);
-		}
-	}
-}
-
-#endif // SHARED_HANDLERS
-
+/////////////////////////////////////////////////////////////////////////////
 // CFieldGoalDoc diagnostics
-
 #ifdef _DEBUG
 void CFieldGoalDoc::AssertValid() const
 {
@@ -133,5 +76,35 @@ void CFieldGoalDoc::Dump(CDumpContext& dc) const
 }
 #endif //_DEBUG
 
+/////////////////////////////////////////////////////////////////////////////
+void CFieldGoalDoc::OnEditSettings()
+{
+	// create an instance of the dialog
+	CSettingsDialog dlg;
 
-// CFieldGoalDoc commands
+	// setup the dialog parameter
+	dlg.Distance = MetersToGoal;
+	dlg.Velocity = Velocity;
+	dlg.AngleInDegrees = AngleInDegrees;
+
+	// launch the dialog
+	INT_PTR ipResponse = dlg.DoModal();
+
+	// if the user canceled, bail out
+	if ( ipResponse == IDCANCEL )
+	{
+		return;
+	}
+
+	MetersToGoal = dlg.Distance;
+	Velocity = dlg.Velocity;
+	AngleInDegrees = dlg.AngleInDegrees;
+
+	CView* pView = View;
+	if ( pView != nullptr )
+	{
+		pView->Invalidate();
+	}
+} // OnEditSettings
+
+/////////////////////////////////////////////////////////////////////////////
