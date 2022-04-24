@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////
 class CFieldGoalView : public CScrollView
 {
-protected: // create from serialization only
+protected: 
 	CSize m_sizeClient;	// physical size of client area
 	double m_dTop; // top of view in inches
 
@@ -256,7 +256,7 @@ public:
 	// angle in radians of the kick
 	double GetAngleInRadians()
 	{
-		const double dAngleInDegrees = AngleInDegrees;
+		const double dAngleInDegrees = 90 - AngleInDegrees;
 		const double dAngle = dAngleInDegrees;
 		const double value = Radians( dAngle );
 		return value;
@@ -281,6 +281,23 @@ public:
 	// distance to goal in meters
 	__declspec( property( get = GetMetersToGoal, put = SetMetersToGoal ) )
 		double MetersToGoal;
+
+	// time in seconds between samples
+	double GetSampleTime()
+	{
+		CFieldGoalDoc* pDoc = Document;
+		const double value = pDoc->SampleTime;
+		return value;
+	}
+	// time in seconds between samples
+	void SetSampleTime( double value )
+	{
+		CFieldGoalDoc* pDoc = Document;
+		pDoc->SampleTime = value;
+	}
+	// time in seconds between samples
+	__declspec( property( get = GetSampleTime, put = SetSampleTime ) )
+		double SampleTime;
 
 	// meters per inch scale
 	double GetMetersPerInch()
@@ -433,6 +450,23 @@ protected:
 		}
 	}
 
+	/////////////////////////////////////////////////////////////////////////////
+	// generate font characteristics from given font enumeration, where
+	// the enumeration is based on Atlas PDF definition
+	static void BuildFont
+	( 
+		CString csFace, // name of the font face
+		bool bBold, // bold font if true
+		bool bItalic, // italic font if true
+		int nTextHeight, // text height in pixels
+		bool bVertical, // vertical orientation
+		CFont& font, // generated font
+		BYTE nCharSet = ANSI_CHARSET, // current character set
+		bool bFlipX = false, // flip horizontally
+		bool bFlipY = false, // flip vertically
+		short nUp = -1, // moving up is a negative value
+		int nTextWidth = 0 // default width
+	);
 
 	// Overrides
 public:

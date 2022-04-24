@@ -29,6 +29,7 @@ CFieldGoalDoc::CFieldGoalDoc()
 	AngleInDegrees = 70;
 	Velocity = 20;
 	MetersToGoal = 80;
+	SampleTime = 0.1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -52,13 +53,30 @@ BOOL CFieldGoalDoc::OnNewDocument()
 // CFieldGoalDoc serialization
 void CFieldGoalDoc::Serialize(CArchive& ar)
 {
+	CString csAngle, csVelocity, csDistance, csSample;
 	if (ar.IsStoring())
 	{
-		// TODO: add storing code here
+		csAngle.Format( _T( "%g\n" ), AngleInDegrees );
+		csVelocity.Format( _T( "%g\n" ), Velocity );
+		csDistance.Format( _T( "%g\n" ), MetersToGoal );
+		csSample.Format( _T( "%g\n" ), SampleTime );
+
+		ar.WriteString( csAngle );
+		ar.WriteString( csVelocity );
+		ar.WriteString( csDistance );
+		ar.WriteString( csSample );
 	}
 	else
 	{
-		// TODO: add loading code here
+		ar.ReadString( csAngle );
+		ar.ReadString( csVelocity );
+		ar.ReadString( csDistance );
+		ar.ReadString( csSample );
+
+		AngleInDegrees = _tstof( csAngle );
+		Velocity = _tstof( csVelocity );
+		MetersToGoal = _tstof( csDistance );
+		SampleTime = _tstof( csSample );
 	}
 } // Serialize
 
@@ -86,6 +104,7 @@ void CFieldGoalDoc::OnEditSettings()
 	dlg.Distance = MetersToGoal;
 	dlg.Velocity = Velocity;
 	dlg.AngleInDegrees = AngleInDegrees;
+	dlg.SampleTime = SampleTime;
 
 	// launch the dialog
 	INT_PTR ipResponse = dlg.DoModal();
@@ -99,6 +118,7 @@ void CFieldGoalDoc::OnEditSettings()
 	MetersToGoal = dlg.Distance;
 	Velocity = dlg.Velocity;
 	AngleInDegrees = dlg.AngleInDegrees;
+	SampleTime = dlg.SampleTime;
 
 	CView* pView = View;
 	if ( pView != nullptr )

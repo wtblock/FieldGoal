@@ -13,6 +13,7 @@ protected: // create from serialization only
 	double m_dAngle; // angle of the kick in degrees
 	double m_dVelocity; // velocity in meters per second
 	double m_dMetersToGoal; // distance to goal in meters
+	double m_dSampleTime; // time in seconds between samples
 
 // properties
 public:
@@ -96,7 +97,7 @@ public:
 	// angle in degrees of the kick
 	void SetAngleInDegrees( double value )
 	{
-		m_dAngle = 90 - value;
+		m_dAngle = value;
 	}
 	// angle in degrees of the kick
 	__declspec( property( get = GetAngleInDegrees, put = SetAngleInDegrees ) )
@@ -129,6 +130,20 @@ public:
 	// distance to goal in meters
 	__declspec( property( get = GetMetersToGoal, put = SetMetersToGoal ) )
 		double MetersToGoal;
+
+	// time in seconds between samples
+	double GetSampleTime()
+	{
+		return m_dSampleTime;
+	}
+	// time in seconds between samples
+	void SetSampleTime( double value )
+	{
+		m_dSampleTime = value;
+	}
+	// time in seconds between samples
+	__declspec( property( get = GetSampleTime, put = SetSampleTime ) )
+		double SampleTime;
 
 	// get a pointer to the view
 	CView* GetView()

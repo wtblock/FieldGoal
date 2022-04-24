@@ -14,6 +14,7 @@ CSettingsDialog::CSettingsDialog(CWnd* pParent /*=nullptr*/)
 	, m_dDistance( 0 )
 	, m_dAngle( 0 )
 	, m_dVelocity( 0 )
+	, m_dSampleTime( 0 )
 {
 
 }
@@ -26,12 +27,14 @@ CSettingsDialog::~CSettingsDialog()
 /////////////////////////////////////////////////////////////////////////////
 void CSettingsDialog::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+	CDialogEx::DoDataExchange( pDX );
 	DDX_Text( pDX, IDC_EDIT_DISTANCE, m_dDistance );
 	DDV_MinMaxDouble( pDX, m_dDistance, 10, 100 );
 	DDX_Text( pDX, IDC_EDIT_ANGLE, m_dAngle );
 	DDV_MinMaxDouble( pDX, m_dAngle, 0, 90 );
 	DDX_Text( pDX, IDC_EDIT_VELOCITY, m_dVelocity );
+	DDX_Text( pDX, IDC_EDIT_SAMPLE_TIME, m_dSampleTime );
+	DDV_MinMaxDouble(pDX, m_dSampleTime, 0.001, 2);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -21,14 +21,16 @@
 #define IDC_EDIT_DISTANCE               1000
 #define IDC_EDIT_ANGLE                  1001
 #define IDC_EDIT_VELOCITY               1002
+#define IDC_EDIT_VELOCITY2              1003
+#define IDC_EDIT_SAMPLE_TIME            1003
 #define ID_EDIT_SETTINGS                32771
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        312
-#define _APS_NEXT_COMMAND_VALUE         32772
+#define _APS_NEXT_RESOURCE_VALUE        313
+#define _APS_NEXT_COMMAND_VALUE         32777
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

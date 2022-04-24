@@ -164,6 +164,59 @@ void CFieldGoalView::OnSize( UINT nType, int cx, int cy )
 } // OnSize
 
 /////////////////////////////////////////////////////////////////////////////
+// generate font characteristics from given properties
+void CFieldGoalView::BuildFont
+(
+	CString csFace, // name of the font face
+	bool bBold, // bold font if true
+	bool bItalic, // italic font if true
+	int nTextHeight, // text height in pixels
+	bool bVertical, // vertical orientation
+	CFont& font, // generated font
+	BYTE nCharSet/* = ANSI_CHARSET*/, // current character set
+	bool bFlipX/* = false*/, // flip horizontally
+	bool bFlipY/* = false*/, // flip vertically
+	short nUp/* = -1*/, // moving up is a negative value
+	int nTextWidth/* = 0*/ // default width
+)
+{
+	LOGFONT lf;
+	// Populate logical font with defaults
+	::GetObject( GetStockObject( SYSTEM_FONT ), sizeof( LOGFONT ), &lf );
+	int nAngle = bVertical ? nUp * 900 : 0;
+	
+	// rotate 180 degrees (happens when printing up-side-down)
+	if ( bFlipX && bFlipY )
+	{
+		nAngle += ( nUp * 1800 );
+		nAngle = nAngle % 3600;
+	}
+
+	// customize our font
+	if ( nTextHeight != 0 )
+	{
+		lf.lfHeight = nTextHeight;
+		if ( nTextWidth != 0 )
+		{
+			lf.lfWidth = nTextWidth;
+		}
+		else
+		{
+			lf.lfWidth = lf.lfHeight * 2 / 5;
+		}
+	}
+
+	lf.lfEscapement = nAngle;
+	lf.lfOrientation = nAngle;
+
+	lf.lfWeight = bBold ? FW_BOLD : FW_NORMAL;
+	lf.lfItalic = bItalic == true;
+	lf.lfCharSet = nCharSet;
+	_tcscpy( lf.lfFaceName, csFace );
+	font.CreateFontIndirect( &lf );
+} // BuildFont
+
+/////////////////////////////////////////////////////////////////////////////
 // render the page or view
 void CFieldGoalView::render
 ( 
@@ -186,6 +239,9 @@ void CFieldGoalView::render
 	// 1 hundredth of an inch
 	const int nRedWidth = InchesToLogical( 0.01 );
 
+	// 0.12 inch size
+	const int nTextHeight = InchesToLogical( 0.18 );
+
 	// black color
 	const COLORREF rgbBlack = RGB( 0, 0, 0 );
 
@@ -200,6 +256,40 @@ void CFieldGoalView::render
 
 	// select the pen for drawing field and goal post
 	pDC->SelectObject( &penBlack );
+
+	// create a font for text output
+	CFont font;
+	BuildFont
+	(
+		_T( "Arial" ), false, false, nTextHeight, false, font
+	);
+
+	// setting labels
+	CString csAngle, csVelocity, csVelocityX, csVelocityY, 
+		csDistance, csSample, csTravelTime;
+	csAngle.Format( _T( "Angle in degrees: %0.5f" ), AngleInDegrees );
+	csVelocity.Format
+	( 
+		_T( "Initial velocity in meters per second: %0.5f" ), Velocity 
+	);
+	csVelocityX.Format
+	( 
+		_T( "Initial X-velocity in meters per second: %0.5f" ), 
+		HorizontalVelocity 
+	);
+	csVelocityY.Format
+	( 
+		_T( "Initial Y-velocity in meters per second: %0.5f" ), 
+		VerticalVelocity 
+	);
+	csDistance.Format
+	( 
+		_T( "Distance to goal in meters: %0.5f" ), MetersToGoal 
+	);
+	csSample.Format
+	( 
+		_T( "Time between samples in seconds: %0.5f" ), SampleTime 
+	);
 
 	// loop through all pages in the document and draw those which overlap 
 	// our view
@@ -270,24 +360,55 @@ void CFieldGoalView::render
 
 		// the travel time is the distance divided by the velocity
 		const double dTravelTime = dMetersToGoal / dHorizontalVelocity;
+		csTravelTime.Format
+		(
+			_T( "Time required to reach goal: %0.5f" ), dTravelTime
+		);
 
 		// time between trajectory calculations
-		const double dT = 0.1;
+		const double dT = SampleTime;
 
-		// draw the trajectory in red
+		// draw settings information
+		pDC->SelectObject( &font );
+		pDC->SetTextAlign( TA_RIGHT | TA_BASELINE );
+
+		// the starting point's coordinates
+		int nX = InchesToLogical( DocumentWidth - 1.0 );
+		int nY = InchesToLogical( 1.0 );
+		
+		pDC->TextOut( nX, nY, csDistance );
+		nY += nTextHeight;
+		pDC->TextOut( nX, nY, csVelocity );
+		nY += nTextHeight;
+		pDC->TextOut( nX, nY, csVelocityX );
+		nY += nTextHeight;
+		pDC->TextOut( nX, nY, csVelocityY );
+		nY += nTextHeight;
+		pDC->TextOut( nX, nY, csAngle );
+		nY += nTextHeight;
+		pDC->TextOut( nX, nY, csSample );
+		nY += nTextHeight;
+		pDC->TextOut( nX, nY, csTravelTime );
+		nY += nTextHeight;
+
+		// remember position for writing the total time taken
+		const int nTextX = nX;
+		const int nTextY = nY;
+
 		pDC->SelectObject( &penRed );
 
 		// the starting point's coordinates
-		int nX = nxField1;
-		int nY = nyField;
+		nX = nxField1;
+		nY = nyField;
 
-		//pDC->MoveTo( nX, nY );
 		// create a rectangle representing the football 
 		CRect rect = Rectangle[ nX ][ nY ];
 
 		// draw the football as an ellipse that fits into the rectangle
 		pDC->Ellipse( &rect );
 
+		double dTime = 0, dxMeters = 0;
+		bool bFirst = true;
 
 		// the gravity equation to calculate distance:
 		//
@@ -299,11 +420,11 @@ void CFieldGoalView::render
 		//		 v is the initial velocity
 		//		 d is the initial distance
 		//		 D is the calculated distance
-		for ( double dTime = dT; dTime <= dTravelTime; dTime += dT )
+		for ( dTime = 0; dTime <= dTravelTime; dTime += dT )
 		{
 			// the horizontal distance traveled is simply velocity multiplied 
 			// by time since there is no acceleration in the X direction
-			const double dxMeters = dHorizontalVelocity * dTime;
+			dxMeters = dHorizontalVelocity * dTime;
 
 			// time raised to the power of 2
 			const double dTimeSquared = pow( dTime, 2.0 );
@@ -333,7 +454,8 @@ void CFieldGoalView::render
 
 			// if the Y coordinate is greater than the initial Y, the ball is 
 			// on the ground and we are done
-			const bool bDone = nY >= nyField;
+			const bool bDone = bFirst == false && nY >= nyField;
+			bFirst = false;
 
 			if ( bDone )
 			{
@@ -353,6 +475,21 @@ void CFieldGoalView::render
 			}
 		}
 
+		// display the final results
+		CString csTime;
+		csTime.Format
+		(
+			_T( "Time traveled in seconds: %0.5f" ), dTime
+		);
+		csDistance.Format
+		(
+			_T( "Distance traveled in meters: %0.5f" ), dxMeters
+		);
+		nY = nTextY;
+		pDC->TextOut( nTextX, nY, csTime );
+		nY += nTextHeight;
+		pDC->TextOut( nTextX, nY, csDistance );
+		
 		// move on to next page
 		dTopOfPage = dBottomOfPage;
 	}
